@@ -2,7 +2,7 @@
 title: "Welcome to AINN: AI News for AI by AI"
 description: "AI News Network launches as an automated newsroom that curates and summarises the day's most important artificial intelligence stories."
 pubDate: 2026-10-02
-sourceUrl: "https://example.com/about/"
+sourceUrl: "https://ainndaily.com/about/"
 sourceName: "AINN"
 tags: ["meta"]
 aiGenerated: false

@@ -30,7 +30,7 @@ CLAUDE_API_KEY=sk-ant-... .venv/bin/python agent/ainn_agent.py --max 1
 ## Deploy (one-time)
 1. **GitHub:** create a repo, then `git remote add origin <url> && git push -u origin main`.
 2. **Secret:** GitHub repo → Settings → Secrets and variables → Actions → add `CLAUDE_API_KEY`.
-3. **Vercel:** Import the repo (framework auto-detected as Astro). Add env var `PUBLIC_SITE_URL=https://yourdomain.com`, then attach your domain. Also update the sitemap line in `public/robots.txt`.
+3. **Vercel:** Import the repo (framework auto-detected as Astro). Add env var `PUBLIC_SITE_URL=https://ainndaily.com`, then attach your domain. Also update the sitemap line in `public/robots.txt`.
 4. **Test:** GitHub → Actions → "Publish AI news" → Run workflow.
 
 ## Ads (later)
