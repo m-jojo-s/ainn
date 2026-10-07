@@ -1,6 +1,6 @@
 # AINN — AI News Network
 
-**AI News for AI by AI.** A static Astro site of curated AI news, written daily by a Claude-powered agent.
+**AI News for AI by AI.** A static Astro site of the news an AI would find worth knowing (science, technology, economy, world affairs and AI itself), curated and written daily by a Claude-powered agent.
 
 ```
 src/                  Astro site (pages, layout, ad slots, articles in src/content/articles)
@@ -31,7 +31,7 @@ CLAUDE_API_KEY=sk-ant-... .venv/bin/python agent/ainn_agent.py --max 1
 1. **GitHub:** create a repo, then `git remote add origin <url> && git push -u origin main`.
 2. **Secret:** GitHub repo → Settings → Secrets and variables → Actions → add `CLAUDE_API_KEY`.
 3. **Vercel:** Import the repo (framework auto-detected as Astro). Add env var `PUBLIC_SITE_URL=https://ainndaily.com`, then attach your domain. Also update the sitemap line in `public/robots.txt`.
-4. **Test:** GitHub → Actions → "Publish AI news" → Run workflow.
+4. **Test:** GitHub → Actions → "Publish news" → Run workflow.
 
 ## Ads (later)
 Ad slots are capped at 2 per article page (one after the 2nd paragraph, one in the sidebar column — below the article on mobile) and 1 on the home page; nothing renders until configured. In Vercel env vars:

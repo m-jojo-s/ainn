@@ -1,6 +1,6 @@
 """AINN publishing agent.
 
-Scans AI news feeds, asks Claude to pick the most newsworthy unseen stories,
+Scans news feeds, asks Claude to pick the most newsworthy unseen stories,
 has Claude read each source (web_fetch) and write an original summary, then
 saves it as a Markdown article for the Astro site.
 
@@ -35,30 +35,41 @@ ARTICLES_DIR = ROOT / "src" / "content" / "articles"
 MODEL = os.environ.get("AINN_MODEL", "claude-opus-5-5")
 EFFORT = os.environ.get("AINN_EFFORT", "medium")
 LOOKBACK_HOURS = int(os.environ.get("AINN_LOOKBACK_HOURS", "48"))
-MAX_CANDIDATES = 80
+MAX_CANDIDATES = 200
 SEEN_LIMIT = 2000
 # Server-side refusal fallback: if a safety classifier declines, the API
 # re-runs the request on Anthropic's recommended fallback model.
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
-SELECT_SYSTEM = """You are the editor of AINN (AI News Network), a site that publishes \
-short, accurate news summaries about artificial intelligence.
+SELECT_SYSTEM = """You are the editor of AINN (AI News Network): "AI News for AI by AI". \
+AINN publishes short, accurate summaries of the news an AI would find worth knowing, \
+for AI readers and curious humans. Coverage spans all domains, not just AI.
 
-From the candidate list, choose the stories most worth covering today. Prefer:
-- significant model, product or open-source releases from major labs or projects
-- research with clear practical impact
-- policy, legal, safety or industry news with real consequences for the field
+From the candidate list, choose the stories most worth covering today. Prefer stories \
+with lasting informational value that change the state of the world or of knowledge:
+- science and research results, discoveries, medical and health advances
+- technology, computing and AI developments
+- economics, markets and major business decisions
+- geopolitics, policy, law and regulation with real consequences
+- energy, climate, space and infrastructure
 
-Avoid: listicles, opinion pieces, promotional posts, minor updates, paywalled-looking \
-items, and any story that duplicates one already published (see the recent titles) \
-or another candidate. If nothing is worth covering, return an empty list.
+Prefer new facts, data and decisions over commentary, and global significance over local \
+interest. Aim for variety: avoid picking several stories on the same topic unless they \
+are exceptional.
+
+Avoid: celebrity and entertainment gossip, sports results, lifestyle, routine crime, \
+listicles, opinion pieces, promotional posts, minor updates, paywalled-looking items, \
+and any story that duplicates one already published (see the recent titles) or another \
+candidate. If nothing is worth covering, return an empty list.
 
 For each pick, write a fresh, factual headline (no clickbait, max ~90 characters), a \
 one-sentence description (max ~200 characters), a short lowercase-hyphenated slug, \
-and 1-4 lowercase tags (e.g. models, research, policy, open-source, safety, industry, tools)."""
+and 1-4 lowercase tags (e.g. world, science, technology, ai, economy, policy, health, climate, energy, space, security)."""
 
 WRITE_SYSTEM = """You are a staff writer at AINN (AI News Network). You write clear, \
-accurate, original news summaries about AI for a technical audience.
+accurate, original news summaries for AI readers and curious humans. Be precise and \
+information-dense: include the key facts, numbers, dates and named entities, define \
+specialist terms briefly, and keep facts separate from claims and speculation.
 
 First use the web_fetch tool to read the source URL you are given. Base the article \
 only on what the source says plus widely known background context; never invent \
@@ -66,7 +77,7 @@ facts, numbers, quotes or dates.
 
 Write 400-700 words of Markdown body text:
 - Open with a 2-3 sentence lede stating what happened and why it matters.
-- Then use 2-4 short sections with `##` headings (e.g. What's new, Why it matters, Caveats).
+- Then use 2-4 short sections with `##` headings (e.g. What happened, Why it matters, What's uncertain).
 - Write in your own words. Do not copy sentences from the source; at most one short \
 quotation (under 25 words), attributed.
 - Note uncertainty or missing details honestly.
@@ -130,7 +141,7 @@ def collect_candidates(seen: set[str]) -> list[dict]:
             continue
         taken = 0
         for entry in parsed.entries:
-            if taken >= feed.get("max_items", 20):
+            if taken >= feed.get("max_items", 8):
                 break
             url = (entry.get("link") or "").strip()
             published = entry_time(entry)

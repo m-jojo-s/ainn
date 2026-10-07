@@ -18,7 +18,7 @@ export async function getStaticPaths() {
 const { tag } = Astro.params;
 const { articles } = Astro.props;
 ---
-<Base title={`#${tag}`} description={`AI news tagged ${tag}.`}>
+<Base title={`#${tag}`} description={`Stories tagged ${tag}.`}>
   <h1>#{tag}</h1>
   {articles.map((article) => <ArticleCard article={article} />)}
 </Base>

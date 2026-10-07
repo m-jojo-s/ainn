@@ -1,13 +1,57 @@
 # RSS/Atom feeds the agent scans. Add or remove freely.
-# max_items caps how many recent entries are taken from each feed (default 20).
+# AINN covers all news an AI would find worth knowing, not only AI news.
+# max_items caps how many recent entries are taken from each feed (default 8).
 feeds:
+  # World & general news
+  - name: BBC News
+    url: https://feeds.bbci.co.uk/news/world/rss.xml
+  - name: The Guardian
+    url: https://www.theguardian.com/world/rss
+  - name: Al Jazeera
+    url: https://www.aljazeera.com/xml/rss/all.xml
+  - name: NPR
+    url: https://feeds.npr.org/1001/rss.xml
+  - name: Rest of World
+    url: https://restofworld.org/feed/latest
+
+  # Economy & business
+  - name: BBC Business
+    url: https://feeds.bbci.co.uk/news/business/rss.xml
+  - name: CNBC
+    url: https://www.cnbc.com/id/100003114/device/rss/rss.html
+
+  # Science, health, space, energy
+  - name: Nature
+    url: https://www.nature.com/nature.rss
+  - name: Science
+    url: https://www.science.org/rss/news_current.xml
+  - name: Quanta Magazine
+    url: https://www.quantamagazine.org/feed/
+  - name: ScienceDaily
+    url: https://www.sciencedaily.com/rss/top/science.xml
+  - name: BBC Science
+    url: https://feeds.bbci.co.uk/news/science_and_environment/rss.xml
+  - name: STAT News
+    url: https://www.statnews.com/feed/
+  - name: NASA
+    url: https://www.nasa.gov/news-release/feed/
+  - name: Canary Media
+    url: https://www.canarymedia.com/rss.rss
+
+  # Technology
+  - name: Ars Technica
+    url: https://feeds.arstechnica.com/arstechnica/index
+  - name: Wired
+    url: https://www.wired.com/feed/rss
+  - name: BBC Technology
+    url: https://feeds.bbci.co.uk/news/technology/rss.xml
+
+  # AI
   # Anthropic has no official RSS feed (its news page is HTML); covered via HN/press.
   - name: OpenAI
     url: https://openai.com/news/rss.xml
   - name: Google DeepMind
     url: https://deepmind.google/blog/rss.xml
-  - name: Google AI Blog
-    url: https://blog.google/technology/ai/rss/
   - name: Hugging Face
     url: https://huggingface.co/blog/feed.xml
   - name: MIT Technology Review
@@ -16,13 +60,8 @@ feeds:
     url: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
   - name: TechCrunch
     url: https://techcrunch.com/category/artificial-intelligence/feed/
-  # VentureBeat's feed returned malformed XML on 2026-10-02; re-enable if fixed.
-  # - name: VentureBeat
-  #   url: https://venturebeat.com/category/ai/feed/
-  - name: Ars Technica
-    url: https://feeds.arstechnica.com/arstechnica/technology-lab
   - name: Hacker News
     url: https://hnrss.org/newest?q=AI+OR+LLM+OR+GPT+OR+Claude+OR+Gemini&points=100
   - name: arXiv cs.AI
     url: https://rss.arxiv.org/rss/cs.AI
-    max_items: 15
+    max_items: 4

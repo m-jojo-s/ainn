@@ -1,4 +1,4 @@
-name: Publish AI news
+name: Publish news
 
 on:
   schedule:
@@ -52,6 +52,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Nothing new to publish."
           else
-            git commit -m "Publish AI news $(date -u +%Y-%m-%d)"
+            git commit -m "Publish news $(date -u +%Y-%m-%d)"
             git push
           fi
