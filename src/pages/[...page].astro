@@ -14,7 +14,8 @@ export const getStaticPaths = (async ({ paginate }) => {
 }) satisfies GetStaticPaths;
 
 const { page } = Astro.props;
-const AD_AFTER = 3; // single in-feed ad after the 3rd card
+// Single in-feed ad after the 3rd card, or after the last card if there are fewer.
+const adAfter = Math.min(3, page.data.length);
 ---
 <Base title={page.currentPage > 1 ? `Latest — page ${page.currentPage}` : undefined}>
   {page.currentPage === 1 && (
@@ -26,7 +27,7 @@ const AD_AFTER = 3; // single in-feed ad after the 3rd card
   {page.data.map((article, i) => (
     <>
       <ArticleCard article={article} />
-      {i === AD_AFTER - 1 && <AdSlot placement="feed" />}
+      {i === adAfter - 1 && <AdSlot placement="feed" />}
     </>
   ))}
   {page.data.length === 0 && <p>No articles yet — the agent publishes daily.</p>}
