@@ -33,7 +33,7 @@ jobs:
 
       - name: Run agent
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
         run: python agent/ainn_agent.py --max "${{ github.event.inputs.max || '1' }}"
 
       - uses: actions/setup-node@v4

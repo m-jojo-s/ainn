@@ -312,7 +312,11 @@ def main() -> int:
     if not candidates:
         return 0
 
-    client = anthropic.Anthropic()
+    api_key = os.environ.get("CLAUDE_API_KEY")
+    if not api_key:
+        print("CLAUDE_API_KEY is not set.")
+        return 1
+    client = anthropic.Anthropic(api_key=api_key)
     try:
         picks = select_stories(client, candidates, recent_titles(), args.max)
     except RefusalError as e:
@@ -348,7 +352,7 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except anthropic.AuthenticationError:
-        print("Authentication failed: set ANTHROPIC_API_KEY.")
+        print("Authentication failed: check CLAUDE_API_KEY.")
         sys.exit(1)
     except anthropic.RateLimitError:
         print("Rate limited by the API; try again later.")
