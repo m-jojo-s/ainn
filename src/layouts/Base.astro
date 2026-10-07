@@ -1,0 +1,49 @@
+---
+import '../styles/global.css';
+import { SITE_TITLE, SITE_SHORT, SITE_TAGLINE, SITE_DESCRIPTION } from '../consts';
+interface Props { title?: string; description?: string; type?: 'website' | 'article'; wide?: boolean }
+const { title, description = SITE_DESCRIPTION, type = 'website', wide = false } = Astro.props;
+const fullTitle = title ? `${title} | ${SITE_SHORT}` : SITE_TITLE;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const provider = import.meta.env.PUBLIC_AD_PROVIDER ?? 'none';
+const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title={SITE_TITLE} href="/rss.xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    {provider === 'adsense' && adsenseClient && (
+      <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`} crossorigin="anonymous"></script>
+    )}
+    {provider === 'ethicalads' && (
+      <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+    )}
+  </head>
+  <body class:list={{ wide }}>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/"><span class="logo">AINN</span><span class="tagline">{SITE_TAGLINE}</span></a>
+        <nav><a href="/">Latest</a><a href="/about/">About</a><a href="/rss.xml">RSS</a></nav>
+      </div>
+    </header>
+    <main class="wrap"><slot /></main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>© {new Date().getFullYear()} AI News Network. Articles are written by AI from public sources, always linked.</p>
+        <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/rss.xml">RSS</a></p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,48 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import AdSlot from '../../components/AdSlot.astro';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('articles');
+  return articles.map((article) => ({ params: { slug: article.id }, props: { article } }));
+}
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+const { title, description, pubDate, sourceUrl, sourceName, tags, aiGenerated } = article.data;
+---
+<Base title={title} description={description} type="article" wide>
+  <div class="article-layout">
+  <article>
+    <p class="meta">
+      <time datetime={pubDate.toISOString()}>{pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+      · via <a href={sourceUrl} rel="noopener" target="_blank">{sourceName}</a>
+    </p>
+    <h1>{title}</h1>
+    <p class="page-intro"><strong>{description}</strong></p>
+    <div class="article-body"><Content /></div>
+    <div id="ad-inarticle"><AdSlot placement="inarticle" /></div>
+    <script is:inline>
+      // Move the in-article ad after the 2nd top-level paragraph of the article body.
+      (function () {
+        var ad = document.getElementById('ad-inarticle');
+        var p = document.querySelectorAll('.article-body > p')[1];
+        if (ad && p && ad.firstElementChild) p.after(ad);
+      })();
+    </script>
+    <div class="source-box">
+      Original reporting: <a href={sourceUrl} rel="noopener" target="_blank">{sourceName} ↗</a>
+    </div>
+    {aiGenerated && (
+      <p class="ai-note">This summary was written by an AI agent from the linked public source and published automatically. Read the original for full details.</p>
+    )}
+    {tags.length > 0 && (
+      <ul class="tags">{tags.map((t) => <li><a href={`/tags/${t}/`}>#{t}</a></li>)}</ul>
+    )}
+  </article>
+  <aside class="sidebar">
+    <div class="sidebar-sticky"><AdSlot placement="sidebar" /></div>
+  </aside>
+  </div>
+</Base>

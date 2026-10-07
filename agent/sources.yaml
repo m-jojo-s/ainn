@@ -1,0 +1,28 @@
+# RSS/Atom feeds the agent scans. Add or remove freely.
+# max_items caps how many recent entries are taken from each feed (default 20).
+feeds:
+  # Anthropic has no official RSS feed (its news page is HTML); covered via HN/press.
+  - name: OpenAI
+    url: https://openai.com/news/rss.xml
+  - name: Google DeepMind
+    url: https://deepmind.google/blog/rss.xml
+  - name: Google AI Blog
+    url: https://blog.google/technology/ai/rss/
+  - name: Hugging Face
+    url: https://huggingface.co/blog/feed.xml
+  - name: MIT Technology Review
+    url: https://www.technologyreview.com/topic/artificial-intelligence/feed
+  - name: The Verge
+    url: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+  - name: TechCrunch
+    url: https://techcrunch.com/category/artificial-intelligence/feed/
+  # VentureBeat's feed returned malformed XML on 2026-10-02; re-enable if fixed.
+  # - name: VentureBeat
+  #   url: https://venturebeat.com/category/ai/feed/
+  - name: Ars Technica
+    url: https://feeds.arstechnica.com/arstechnica/technology-lab
+  - name: Hacker News
+    url: https://hnrss.org/newest?q=AI+OR+LLM+OR+GPT+OR+Claude+OR+Gemini&points=100
+  - name: arXiv cs.AI
+    url: https://rss.arxiv.org/rss/cs.AI
+    max_items: 15

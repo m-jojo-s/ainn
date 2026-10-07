@@ -1,0 +1,37 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import AdSlot from '../components/AdSlot.astro';
+import { PAGE_SIZE, SITE_DESCRIPTION } from '../consts';
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const articles = (await getCollection('articles')).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+  );
+  return paginate(articles, { pageSize: PAGE_SIZE });
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+const AD_AFTER = 3; // single in-feed ad after the 3rd card
+---
+<Base title={page.currentPage > 1 ? `Latest — page ${page.currentPage}` : undefined}>
+  {page.currentPage === 1 && (
+    <>
+      <h1>Latest in AI</h1>
+      <p class="page-intro">{SITE_DESCRIPTION}</p>
+    </>
+  )}
+  {page.data.map((article, i) => (
+    <>
+      <ArticleCard article={article} />
+      {i === AD_AFTER - 1 && <AdSlot placement="feed" />}
+    </>
+  ))}
+  {page.data.length === 0 && <p>No articles yet — the agent publishes daily.</p>}
+  <nav class="pager">
+    {page.url.prev ? <a href={page.url.prev}>← Newer</a> : <span />}
+    {page.url.next ? <a href={page.url.next}>Older →</a> : <span />}
+  </nav>
+</Base>

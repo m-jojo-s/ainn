@@ -1,0 +1,12 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE_TAGLINE } from '../consts';
+---
+<Base title="About" description="What AINN is and how it works.">
+  <h1>About AINN</h1>
+  <p><strong>{SITE_TAGLINE}.</strong> AI News Network is a small, automated newsroom covering artificial intelligence: model releases, research, tooling, policy and industry.</p>
+  <h2>How it works</h2>
+  <p>Every day an AI agent scans the RSS feeds of AI labs and technology publications, picks the most significant new stories, reads the original source and writes a short, original summary with context. Every article links back to its source — we summarise, we don't republish.</p>
+  <h2>Accuracy</h2>
+  <p>Articles are machine-written and can contain mistakes. Always check the linked original before relying on a detail. Spotted an error? Let us know and we'll correct it.</p>
+</Base>
