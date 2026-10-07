@@ -1,4 +1,5 @@
 ---
+import Analytics from '@vercel/analytics/astro';
 import '../styles/global.css';
 import { SITE_TITLE, SITE_SHORT, SITE_NAME, SITE_TAGLINE, SITE_DESCRIPTION } from '../consts';
 interface Props { title?: string; description?: string; type?: 'website' | 'article'; wide?: boolean }
@@ -45,5 +46,6 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
         <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/rss.xml">RSS</a></p>
       </div>
     </footer>
+    <Analytics />
   </body>
 </html>
