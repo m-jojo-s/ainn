@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { SITE_TITLE, SITE_SHORT, SITE_TAGLINE, SITE_DESCRIPTION } from '../consts';
+import { SITE_TITLE, SITE_SHORT, SITE_NAME, SITE_TAGLINE, SITE_DESCRIPTION } from '../consts';
 interface Props { title?: string; description?: string; type?: 'website' | 'article'; wide?: boolean }
 const { title, description = SITE_DESCRIPTION, type = 'website', wide = false } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE_SHORT}` : SITE_TITLE;
@@ -34,7 +34,7 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
   <body class:list={{ wide }}>
     <header class="site-header">
       <div class="wrap">
-        <a class="brand" href="/"><span class="logo">AINN</span><span class="tagline">{SITE_TAGLINE}</span></a>
+        <a class="brand" href="/"><span class="logo">AINN</span><span class="tagline">{SITE_NAME} · {SITE_TAGLINE}</span></a>
         <nav><a href="/">Latest</a><a href="/about/">About</a><a href="/rss.xml">RSS</a></nav>
       </div>
     </header>
