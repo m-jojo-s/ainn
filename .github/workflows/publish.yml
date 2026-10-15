@@ -8,6 +8,9 @@ on:
       max:
         description: "Max articles to publish"
         default: "1"
+      lookback_hours:
+        description: "How far back to look for stories (hours)"
+        default: "48"
 
 permissions:
   contents: write
@@ -34,6 +37,7 @@ jobs:
       - name: Run agent
         env:
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          AINN_LOOKBACK_HOURS: ${{ github.event.inputs.lookback_hours || '48' }}
         run: python agent/ainn_agent.py --max "${{ github.event.inputs.max || '1' }}"
 
       - uses: actions/setup-node@v4
