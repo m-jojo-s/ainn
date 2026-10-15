@@ -1,12 +1,12 @@
 # RSS/Atom feeds the agent scans. Add or remove freely.
 # AINN covers all news an AI would find worth knowing, not only AI news.
+# Stories from sites whose robots.txt blocks Claude-User are also filtered automatically.
 # max_items caps how many recent entries are taken from each feed (default 8).
 feeds:
   # World & general news
   - name: BBC News
     url: https://feeds.bbci.co.uk/news/world/rss.xml
-  - name: The Guardian
-    url: https://www.theguardian.com/world/rss
+  # The Guardian removed 2026-10-14: robots.txt blocks Claude-User.
   - name: Al Jazeera
     url: https://www.aljazeera.com/xml/rss/all.xml
   - name: NPR
@@ -17,8 +17,7 @@ feeds:
   # Economy & business
   - name: BBC Business
     url: https://feeds.bbci.co.uk/news/business/rss.xml
-  - name: CNBC
-    url: https://www.cnbc.com/id/100003114/device/rss/rss.html
+  # CNBC removed 2026-10-14: robots.txt blocks Claude-User, so articles can't be read.
 
   # Science, health, space, energy
   - name: Nature
@@ -39,10 +38,8 @@ feeds:
     url: https://www.canarymedia.com/rss.rss
 
   # Technology
-  - name: Ars Technica
-    url: https://feeds.arstechnica.com/arstechnica/index
-  - name: Wired
-    url: https://www.wired.com/feed/rss
+  # Ars Technica removed 2026-10-14: robots.txt blocks Claude-User.
+  # Wired removed 2026-10-14: robots.txt blocks Claude-User.
   - name: BBC Technology
     url: https://feeds.bbci.co.uk/news/technology/rss.xml
 
@@ -56,8 +53,7 @@ feeds:
     url: https://huggingface.co/blog/feed.xml
   - name: MIT Technology Review
     url: https://www.technologyreview.com/topic/artificial-intelligence/feed
-  - name: The Verge
-    url: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+  # The Verge removed 2026-10-14: robots.txt blocks Claude-User (fetches return 403).
   - name: TechCrunch
     url: https://techcrunch.com/category/artificial-intelligence/feed/
   - name: Hacker News

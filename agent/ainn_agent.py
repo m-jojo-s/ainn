@@ -20,8 +20,11 @@ import os
 import re
 import sys
 import time
+import urllib.request
+import urllib.robotparser
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import anthropic
 import feedparser
@@ -30,6 +33,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 SOURCES_FILE = ROOT / "agent" / "sources.yaml"
 SEEN_FILE = ROOT / "agent" / "state" / "seen.json"
+SKIPS_FILE = ROOT / "agent" / "state" / "skips.jsonl"
 ARTICLES_DIR = ROOT / "src" / "content" / "articles"
 
 MODEL = os.environ.get("AINN_MODEL", "claude-opus-5-5")
@@ -37,6 +41,13 @@ EFFORT = os.environ.get("AINN_EFFORT", "medium")
 LOOKBACK_HOURS = int(os.environ.get("AINN_LOOKBACK_HOURS", "48"))
 MAX_CANDIDATES = 200
 SEEN_LIMIT = 2000
+SKIPS_LIMIT = 300
+# Ranked backups the editor provides per article, so one unreadable source
+# doesn't leave the day empty.
+BACKUPS_PER_ARTICLE = 3
+# User agent Anthropic's web_fetch tool uses; sites that disallow it in
+# robots.txt can never be read, so their stories are filtered out up front.
+FETCH_AGENT = "Claude-User"
 # Server-side refusal fallback: if a safety classifier declines, the API
 # re-runs the request on Anthropic's recommended fallback model.
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
@@ -54,8 +65,12 @@ with lasting informational value that change the state of the world or of knowle
 - energy, climate, space and infrastructure
 
 Prefer new facts, data and decisions over commentary, and global significance over local \
-interest. Aim for variety: avoid picking several stories on the same topic unless they \
-are exceptional.
+interest. AI is one beat among many, not the default: look at the recently published \
+titles and favour topics that have been under-covered lately. Avoid picking several \
+stories on the same topic unless they are exceptional.
+
+Return the picks ranked best first. Later picks are backups, used only if an earlier \
+story's source can't be read, so make every pick one you would be glad to publish.
 
 Avoid: celebrity and entertainment gossip, sports results, lifestyle, routine crime, \
 listicles, opinion pieces, promotional posts, minor updates, paywalled-looking items, \
@@ -159,8 +174,31 @@ def collect_candidates(seen: set[str]) -> list[dict]:
                 "snippet": strip_html(entry.get("summary", ""))[:400],
             })
         print(f"  {feed['name']}: {taken} new")
+    candidates = [c for c in candidates if fetch_allowed(c["url"])]
     candidates.sort(key=lambda c: c["published"] or "", reverse=True)
     return candidates[:MAX_CANDIDATES]
+
+
+_robots_cache: dict[str, urllib.robotparser.RobotFileParser | None] = {}
+
+
+def fetch_allowed(url: str) -> bool:
+    """False if the site's robots.txt disallows Anthropic's fetcher for this URL."""
+    parts = urlsplit(url)
+    host = f"{parts.scheme}://{parts.netloc}"
+    if host not in _robots_cache:
+        parser = urllib.robotparser.RobotFileParser()
+        try:
+            req = urllib.request.Request(f"{host}/robots.txt", headers={"User-Agent": "Mozilla/5.0 (AINN-bot)"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                parser.parse(resp.read().decode("utf-8", "replace").splitlines())
+        except Exception:
+            parser = None  # unreachable/missing robots.txt: assume allowed
+        _robots_cache[host] = parser
+        if parser and not parser.can_fetch(FETCH_AGENT, url):
+            print(f"  - {parts.netloc} blocks {FETCH_AGENT}; skipping its stories")
+    parser = _robots_cache[host]
+    return parser is None or parser.can_fetch(FETCH_AGENT, url)
 
 
 # ---------- Claude ----------
@@ -179,13 +217,16 @@ def call_claude(client: anthropic.Anthropic, **kwargs):
 
 
 def select_stories(client, candidates: list[dict], recent_titles: list[str], max_picks: int) -> list[dict]:
+    """Return up to max_picks * (1 + BACKUPS_PER_ARTICLE) picks, ranked best first."""
     listing = "\n".join(
         f"[{i}] ({c['source']}, {c['published'] or 'date unknown'}) {c['title']}\n    {c['snippet']}"
         for i, c in enumerate(candidates)
     )
     recent = "\n".join(f"- {t}" for t in recent_titles) or "(none yet)"
+    wanted = max_picks * (1 + BACKUPS_PER_ARTICLE)
     prompt = (
-        f"Pick at most {max_picks} stories.\n\n"
+        f"We will publish {max_picks} stor{'y' if max_picks == 1 else 'ies'} today. "
+        f"Rank up to {wanted} picks, best first; the extras are backups.\n\n"
         f"Recently published on AINN:\n{recent}\n\n"
         f"Candidates:\n{listing}"
     )
@@ -197,16 +238,18 @@ def select_stories(client, candidates: list[dict], recent_titles: list[str], max
         messages=[{"role": "user", "content": prompt}],
     )
     text = next(b.text for b in response.content if b.type == "text")
-    picks = json.loads(text)["picks"][:max_picks]
-    valid = []
+    picks = json.loads(text)["picks"][:wanted]
+    valid, used = [], set()
     for pick in picks:
         idx = pick["candidate_id"]
-        if 0 <= idx < len(candidates):
+        if 0 <= idx < len(candidates) and idx not in used:
+            used.add(idx)
             valid.append({**pick, "candidate": candidates[idx]})
     return valid
 
 
-def write_article(client, pick: dict) -> str | None:
+def write_article(client, pick: dict) -> tuple[str | None, str | None]:
+    """Return (body, None) on success or (None, reason) when the story is skipped."""
     c = pick["candidate"]
     prompt = (
         f"Headline: {pick['title']}\n"
@@ -228,24 +271,29 @@ def write_article(client, pick: dict) -> str | None:
         if response.stop_reason != "pause_turn":
             break
         messages = [messages[0], {"role": "assistant", "content": response.content}]
+    if response.stop_reason == "pause_turn":
+        return None, "server tool loop did not finish (pause_turn)"
     if response.stop_reason == "max_tokens":
-        print("    ! hit max_tokens, skipping")
-        return None
-    # Final text after the last tool result.
-    texts, after_tools = [], False
+        return None, "hit max_tokens"
+    # Final text after the last tool result; note any fetch errors.
+    texts, after_tools, fetch_errors = [], False, []
     for block in response.content:
         if block.type in ("server_tool_use", "web_fetch_tool_result"):
             texts, after_tools = [], True
+            error_code = getattr(getattr(block, "content", None), "error_code", None)
+            if error_code:
+                fetch_errors.append(str(error_code))
         elif block.type == "text":
             texts.append(block.text)
     body = "".join(texts).strip()
+    errors = f" (web_fetch errors: {', '.join(fetch_errors)})" if fetch_errors else ""
     if not after_tools:
-        print("    ! source was not fetched, skipping")
-        return None
-    if not body or body.startswith("SKIP:"):
-        print(f"    ! {body or 'empty response'}")
-        return None
-    return body
+        return None, "source was not fetched"
+    if not body:
+        return None, "empty response" + errors
+    if body.startswith("SKIP:"):
+        return None, body[:300] + errors
+    return body, None
 
 
 # ---------- output ----------
@@ -304,6 +352,20 @@ def save_seen(urls: list[str]) -> None:
     SEEN_FILE.write_text(json.dumps({"urls": urls[-SEEN_LIMIT:]}, indent=2) + "\n")
 
 
+def log_skip(pick: dict, reason: str) -> None:
+    """Append a skipped story and why to skips.jsonl (committed, so it's visible on GitHub)."""
+    entry = {
+        "time": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source": pick["candidate"]["source"],
+        "url": pick["candidate"]["url"],
+        "reason": reason,
+    }
+    lines = SKIPS_FILE.read_text().splitlines() if SKIPS_FILE.exists() else []
+    lines.append(json.dumps(entry, ensure_ascii=False))
+    SKIPS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    SKIPS_FILE.write_text("\n".join(lines[-SKIPS_LIMIT:]) + "\n")
+
+
 # ---------- main ----------
 
 def main() -> int:
@@ -333,25 +395,30 @@ def main() -> int:
     except RefusalError as e:
         print(f"Selection declined: {e}")
         return 1
-    print(f"Selected {len(picks)} stor{'y' if len(picks) == 1 else 'ies'}.")
+    print(f"Selected {len(picks)} ranked stor{'y' if len(picks) == 1 else 'ies'} (incl. backups).")
 
     published = 0
     for pick in picks:
+        if published >= args.max:
+            break
         url = pick["candidate"]["url"]
         print(f"- Writing: {pick['title']}\n    {url}")
         try:
-            body = write_article(client, pick)
+            body, reason = write_article(client, pick)
         except RefusalError as e:
-            print(f"    ! declined: {e}")
-            body = None
+            body, reason = None, f"declined: {e}"
         except anthropic.APIStatusError as e:
             print(f"    ! API error {e.status_code}: {e.message}")
+            log_skip(pick, f"API error {e.status_code}")
             continue  # leave unseen so it can be retried next run
         seen.append(url)  # don't retry stories we deliberately skipped
         if body:
             path = save_article(pick, body)
             published += 1
             print(f"    saved {path.relative_to(ROOT)}")
+        else:
+            print(f"    ! skipped: {reason}")
+            log_skip(pick, reason)
         time.sleep(1)
 
     save_seen(seen)
